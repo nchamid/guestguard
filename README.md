@@ -63,7 +63,10 @@ with the guest account in the tenant.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  Python CLI (main.py) — interactive conversation loop            │
+│  Two interfaces:                                                 │
+│  • Streamlit chat UI (app.py) — multi-turn conversation w/ live  │
+│    tool-call traces and sidebar scenario buttons                 │
+│  • Python CLI (main.py) — interactive terminal conversation loop │
 └──────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -140,6 +143,7 @@ This directly addresses the most common LLM failure mode in technical advice: **
   - `azure-identity` — authentication via `DefaultAzureCredential`
   - `requests` — direct REST calls to Azure AI Search
   - `python-dotenv` — environment configuration
+  - `streamlit` — chat web UI
 
 ## Demo data
 
@@ -181,6 +185,24 @@ cp .env.example .env
 
 ### Run
 
+GuestGuard ships with two interfaces. Pick whichever fits your demo.
+
+#### Option 1: Streamlit chat UI (recommended)
+
+```bash
+streamlit run app.py
+```
+
+A browser tab opens at `http://localhost:8501` with a chat interface. You can:
+
+- Type a question (e.g., *"Why can't bob@personalemail.com access SharePoint? His name is Bob Martinez."*)
+- Click any of the 8 scenario buttons in the sidebar to inject a pre-loaded test case
+- Ask follow-up questions (the agent remembers the conversation)
+- Watch tool calls execute live inside the "🔍 Investigating..." status panel
+- Click "🔄 Reset chat" to start a fresh conversation
+
+#### Option 2: Python CLI
+
 ```bash
 python main.py
 ```
@@ -204,7 +226,7 @@ The agent will call tools (visible as `[calling toolname(args)]` in the output),
 - **Wire tools to live Microsoft Graph API** with proper OAuth and tenant authorization
 - **Expand failure-mode coverage** — conditional access blocks, B2B direct connect failures, federated identity claim mismatches
 - **Remediation execution mode** — with human approval, let the agent apply the fix (assign group, reissue invitation, etc.) directly rather than only recommending
-- **Web frontend (Streamlit or React)** — currently CLI only; a web UI would let business stakeholders self-diagnose without IT pulling logs
+- **Deploy the Streamlit UI to Azure Container Apps** with proper service principal auth so business stakeholders can self-diagnose at a stable URL without IT pulling logs
 - **Slack / Teams integration** — paste a user email into a slash command, get the diagnosis posted back in thread
 - **Persistent ticket integration** — log every diagnosis to a ticket system so IT has an audit trail of agent-assisted resolutions
 
