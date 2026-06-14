@@ -212,6 +212,10 @@ The agent will call tools (visible as `[calling toolname(args)]` in the output),
 
 Built solo by [Nagarjuna Chamidisetty](https://nagarjunac.dev), a senior Microsoft 365 / Azure engineer who has manually triaged guest user provisioning failures at a global organization for years. The diagnostic pattern is well-defined enough that an agent should be able to absorb it. This project demonstrates that the answer is yes.
 
+## Acknowledgments
+
+GuestGuard was built with AI-assisted development. Claude (Anthropic) was used as a coding pair throughout the build — for Python implementation, debugging, and documentation — while project design, architecture decisions, scenario selection, infrastructure setup, and all testing were owned by the author.
+
 ## License
 
 MIT
