@@ -1,0 +1,30 @@
+{
+  "auditEvents": [
+    { "id": "audit-001", "activityDisplayName": "Invite external user", "activityDateTime": "2026-06-07T14:23:15Z", "initiatedBy": "admin@guestguard.com", "targetEmail": "jane.doe@partner.co", "result": "success", "details": "Invitation sent to jane.doe@partner.co" },
+
+    { "id": "audit-002", "activityDisplayName": "Invite external user", "activityDateTime": "2026-06-05T09:15:00Z", "initiatedBy": "manager@guestguard.com", "targetEmail": "bob@personalemail.com", "result": "success", "details": "Invitation sent to bob@personalemail.com" },
+
+    { "id": "audit-003", "activityDisplayName": "Invite external user", "activityDateTime": "2026-06-03T14:00:00Z", "initiatedBy": "admin@guestguard.com", "targetEmail": "alice@partner.com", "result": "success", "details": "Invitation sent to alice@partner.com" },
+    { "id": "audit-004", "activityDisplayName": "Redeem external user invitation", "activityDateTime": "2026-06-03T16:42:00Z", "initiatedBy": "alice@partner.com", "targetEmail": "alice@partner.com", "result": "success", "details": "User redeemed invitation successfully" },
+
+    { "id": "audit-005", "activityDisplayName": "Invite external user", "activityDateTime": "2026-06-08T10:00:00Z", "initiatedBy": "hr@guestguard.com", "targetEmail": "david@contoso.com", "result": "success", "details": "Invitation sent to david@contoso.com" },
+    { "id": "audit-006", "activityDisplayName": "Redeem external user invitation", "activityDateTime": "2026-06-08T11:20:00Z", "initiatedBy": "david@contoso.com", "targetEmail": "david@contoso.com", "result": "success", "details": "User redeemed invitation successfully" },
+    { "id": "audit-007", "activityDisplayName": "Add member to group", "activityDateTime": "2026-06-08T11:25:00Z", "initiatedBy": "system", "targetEmail": "david@contoso.com", "result": "success", "details": "Added to External-Contractors group" },
+    { "id": "audit-008", "activityDisplayName": "MFA registration attempt", "activityDateTime": "2026-06-08T11:30:00Z", "initiatedBy": "david@contoso.com", "targetEmail": "david@contoso.com", "result": "failure", "failureReason": "Phone number provided is a landline (555-0123); SMS and authenticator app require a mobile number", "details": "User attempted MFA registration with phone number" },
+    { "id": "audit-009", "activityDisplayName": "MFA registration attempt", "activityDateTime": "2026-06-09T08:15:00Z", "initiatedBy": "david@contoso.com", "targetEmail": "david@contoso.com", "result": "failure", "failureReason": "Phone number provided is a landline; SMS and authenticator app require a mobile number", "details": "User attempted MFA registration with same landline number" },
+
+    { "id": "audit-010", "activityDisplayName": "Invite external user", "activityDateTime": "2026-06-09T12:00:00Z", "initiatedBy": "procurement@guestguard.com", "targetEmail": "sarah@vendor.com", "result": "success", "details": "Invitation sent to sarah@vendor.com" },
+    { "id": "audit-011", "activityDisplayName": "Redeem external user invitation", "activityDateTime": "2026-06-09T13:45:00Z", "initiatedBy": "sarah@vendor.com", "targetEmail": "sarah@vendor.com", "result": "success", "details": "User redeemed invitation successfully" },
+    { "id": "audit-012", "activityDisplayName": "Add member to group", "activityDateTime": "2026-06-09T13:48:00Z", "initiatedBy": "system", "targetEmail": "sarah@vendor.com", "result": "success", "details": "Added to External-Vendors group" },
+    { "id": "audit-013", "activityDisplayName": "Resource access attempt", "activityDateTime": "2026-06-10T09:30:00Z", "initiatedBy": "sarah@vendor.com", "targetEmail": "sarah@vendor.com", "result": "failure", "failureReason": "User does not have required license SHAREPOINT_BASIC for resource", "details": "Attempted access to SharePoint site VendorPortal" },
+
+    { "id": "audit-014", "activityDisplayName": "Invite external user", "activityDateTime": "2026-06-10T15:30:00Z", "initiatedBy": "admin@guestguard.com", "targetEmail": "mike@gmail.com", "result": "success", "details": "Invitation sent to mike@gmail.com" },
+    { "id": "audit-015", "activityDisplayName": "Redeem external user invitation", "activityDateTime": "2026-06-10T16:15:00Z", "initiatedBy": "mike@gmail.com", "targetEmail": "mike@gmail.com", "result": "failure", "failureReason": "Identity provider 'Google' is not configured for this tenant. Email one-time passcode authentication is also not enabled. User cannot complete redemption.", "details": "User attempted to redeem invitation with Google identity" },
+
+    { "id": "audit-016", "activityDisplayName": "Invite external user", "activityDateTime": "2026-06-01T09:00:00Z", "initiatedBy": "admin@guestguard.com", "targetEmail": "lisa@partner.com", "result": "success", "details": "Invitation sent to lisa@partner.com" },
+    { "id": "audit-017", "activityDisplayName": "Redeem external user invitation", "activityDateTime": "2026-06-01T10:30:00Z", "initiatedBy": "lisa@partner.com", "targetEmail": "lisa@partner.com", "result": "success", "details": "User redeemed invitation successfully" },
+    { "id": "audit-018", "activityDisplayName": "Add member to group", "activityDateTime": "2026-06-01T10:32:00Z", "initiatedBy": "system", "targetEmail": "lisa@partner.com", "result": "success", "details": "Added to ProjectAlpha-Members group" },
+    { "id": "audit-019", "activityDisplayName": "Add member to group", "activityDateTime": "2026-06-01T10:33:00Z", "initiatedBy": "system", "targetEmail": "lisa@partner.com", "result": "success", "details": "Added to External-Collaborators group" },
+    { "id": "audit-020", "activityDisplayName": "License assignment", "activityDateTime": "2026-06-01T10:34:00Z", "initiatedBy": "system", "targetEmail": "lisa@partner.com", "result": "success", "details": "Assigned licenses: SHAREPOINT_BASIC, TEAMS_EXTERNAL_ACCESS" }
+  ]
+}

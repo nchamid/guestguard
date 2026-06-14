@@ -1,0 +1,110 @@
+{
+  "users": [
+    {
+      "email": "jane.doe@partner.co",
+      "displayName": "Jane Doe",
+      "userType": "Guest",
+      "invitationStatus": "PendingAcceptance",
+      "redeemed": false,
+      "redeemedDateTime": null,
+      "identityProvider": null,
+      "invitedBy": "admin@guestguard.com",
+      "invitedDateTime": "2026-06-07T14:23:15Z",
+      "memberOf": [],
+      "assignedLicenses": [],
+      "requiredLicenses": []
+    },
+    {
+      "email": "bob@personalemail.com",
+      "displayName": "Bob Martinez",
+      "userType": "Guest",
+      "invitationStatus": "PendingAcceptance",
+      "redeemed": false,
+      "redeemedDateTime": null,
+      "identityProvider": null,
+      "invitedBy": "manager@guestguard.com",
+      "invitedDateTime": "2026-06-05T09:15:00Z",
+      "memberOf": [],
+      "assignedLicenses": [],
+      "requiredLicenses": []
+    },
+    {
+      "email": "alice@partner.com",
+      "displayName": "Alice Chen",
+      "userType": "Guest",
+      "invitationStatus": "Accepted",
+      "redeemed": true,
+      "redeemedDateTime": "2026-06-03T16:42:00Z",
+      "identityProvider": "ExternalAzureAD",
+      "invitedBy": "admin@guestguard.com",
+      "invitedDateTime": "2026-06-03T14:00:00Z",
+      "memberOf": [],
+      "assignedLicenses": [],
+      "requiredLicenses": [],
+      "notes": "Was supposed to be added to 'ProjectAlpha-Members' group after redemption"
+    },
+    {
+      "email": "david@contoso.com",
+      "displayName": "David Park",
+      "userType": "Guest",
+      "invitationStatus": "Accepted",
+      "redeemed": true,
+      "redeemedDateTime": "2026-06-08T11:20:00Z",
+      "identityProvider": "ExternalAzureAD",
+      "invitedBy": "hr@guestguard.com",
+      "invitedDateTime": "2026-06-08T10:00:00Z",
+      "memberOf": ["External-Contractors"],
+      "assignedLicenses": [],
+      "requiredLicenses": [],
+      "mfaRegistered": false,
+      "mfaRegistrationAttempts": 2,
+      "lastMfaFailureReason": "Phone number provided is a landline; SMS and authenticator app require mobile number"
+    },
+    {
+      "email": "sarah@vendor.com",
+      "displayName": "Sarah Johnson",
+      "userType": "Guest",
+      "invitationStatus": "Accepted",
+      "redeemed": true,
+      "redeemedDateTime": "2026-06-09T13:45:00Z",
+      "identityProvider": "ExternalAzureAD",
+      "invitedBy": "procurement@guestguard.com",
+      "invitedDateTime": "2026-06-09T12:00:00Z",
+      "memberOf": ["External-Vendors"],
+      "assignedLicenses": [],
+      "requiredLicenses": ["SHAREPOINT_BASIC", "TEAMS_EXTERNAL_ACCESS"]
+    },
+    {
+      "email": "mike@gmail.com",
+      "displayName": "Mike Thompson",
+      "userType": "Guest",
+      "invitationStatus": "PendingAcceptance",
+      "redeemed": false,
+      "redeemedDateTime": null,
+      "identityProvider": null,
+      "invitedBy": "admin@guestguard.com",
+      "invitedDateTime": "2026-06-10T15:30:00Z",
+      "memberOf": [],
+      "assignedLicenses": [],
+      "requiredLicenses": [],
+      "lastRedemptionAttempt": {
+        "datetime": "2026-06-10T16:15:00Z",
+        "failureReason": "Identity provider 'Google' not configured for this tenant; email one-time passcode also not enabled"
+      }
+    },
+    {
+      "email": "lisa@partner.com",
+      "displayName": "Lisa Wang",
+      "userType": "Guest",
+      "invitationStatus": "Accepted",
+      "redeemed": true,
+      "redeemedDateTime": "2026-06-01T10:30:00Z",
+      "identityProvider": "ExternalAzureAD",
+      "invitedBy": "admin@guestguard.com",
+      "invitedDateTime": "2026-06-01T09:00:00Z",
+      "memberOf": ["ProjectAlpha-Members", "External-Collaborators"],
+      "assignedLicenses": ["SHAREPOINT_BASIC", "TEAMS_EXTERNAL_ACCESS"],
+      "requiredLicenses": ["SHAREPOINT_BASIC", "TEAMS_EXTERNAL_ACCESS"]
+    }
+  ]
+}
