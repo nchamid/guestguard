@@ -1,0 +1,295 @@
+"""GuestGuard: A reasoning agent for B2B guest user provisioning diagnostics.
+
+Uses the Microsoft Foundry model deployment via the Responses API with a custom
+system prompt, four custom Python tools, and Foundry IQ knowledge retrieval
+(via the query_troubleshooting_kb tool, which calls Azure AI Search REST API).
+
+Run with: python main.py
+"""
+
+import json
+import os
+import sys
+from pathlib import Path
+
+from dotenv import load_dotenv
+from azure.identity import DefaultAzureCredential
+from azure.ai.projects import AIProjectClient
+
+# Import our four custom tool functions
+from src.tools.guest_user_status import get_guest_user_status
+from src.tools.invitation_audit_log import get_invitation_audit_log
+from src.tools.signin_logs import get_signin_logs
+from src.tools.troubleshooting_kb import query_troubleshooting_kb
+
+
+# Load .env from project root
+load_dotenv(Path(__file__).parent / ".env")
+
+PROJECT_ENDPOINT = os.getenv("PROJECT_ENDPOINT")
+MODEL_DEPLOYMENT_NAME = os.getenv("MODEL_DEPLOYMENT_NAME")
+
+if not PROJECT_ENDPOINT or not MODEL_DEPLOYMENT_NAME:
+    print("ERROR: PROJECT_ENDPOINT and MODEL_DEPLOYMENT_NAME must be set in .env")
+    sys.exit(1)
+
+
+SYSTEM_PROMPT = """You are GuestGuard, a diagnostic assistant for IT teams troubleshooting Microsoft Entra ID B2B guest user provisioning failures.
+
+Your job is to identify the ROOT CAUSE of why a guest user cannot access shared resources — not just describe the symptom. You gather evidence with four tools, recognize failure patterns, and ground every recommendation in cited Microsoft documentation.
+
+TOOLS:
+1. get_guest_user_status(email) - ALWAYS CALL FIRST. Returns directory state and redemption status.
+2. get_invitation_audit_log(email) - timeline of invitation, redemption, group adds, MFA attempts.
+3. get_signin_logs(email, display_name) - sign-in attempts. PASS display_name when investigating whether the user might be signing in with a different identity than they were invited with.
+4. query_troubleshooting_kb(symptom) - Microsoft documentation. MANDATORY for every diagnosis. See KNOWLEDGE BASE USE below.
+
+FAILURE PATTERNS (match the evidence to one of these):
+
+Pattern A — INVITATION DELIVERY FAILURE (typo, wrong domain):
+  Signals: invitation sent, never redeemed, ZERO sign-in attempts anywhere (even with display_name).
+  Inference: User never received the invitation. Likely email typo or non-existent domain.
+  Check the invited email closely: common typos include .co vs .com, missing letters, transposed characters, unusual domains.
+  Remediation: Verify correct email with requester, revoke this invitation, reissue to corrected address.
+
+Pattern B — WRONG IDENTITY SIGN-IN:
+  Signals: invitation sent, never redeemed, BUT sign-ins exist under a different email matching the same display name.
+  Inference: User received invitation but is signing in with the wrong identity.
+  You MUST call get_signin_logs WITH display_name to detect this pattern.
+  Remediation: Either ask user to sign in with the invited email, or revoke and reissue invitation to the email they actually use.
+
+Pattern C — REDEEMED BUT NO RESOURCE ACCESS (missing group or license):
+  Signals: invitation redeemed, sign-ins successful, but user still denied access. Audit log shows access denial events.
+  Inference: Provisioning succeeded but downstream group/license assignment did not complete.
+  Check memberOf and assignedLicenses in get_guest_user_status. Check audit log for missing group-add or license-assignment events.
+  Remediation: Manually assign required groups or licenses.
+
+Pattern D — MFA REGISTRATION BLOCKED:
+  Signals: redemption successful, but sign-ins failing with MFA error codes (50158, etc.). Audit log shows MFA registration failures.
+  Common cause: User provided a landline number; MFA requires mobile.
+  Remediation: Have user retry with mobile, or configure alternative MFA method.
+
+Pattern E — IDENTITY PROVIDER NOT CONFIGURED:
+  Signals: invitation sent, redemption ATTEMPTED and FAILED, user email is from external identity (e.g., Gmail).
+  Inference: Tenant does not trust the user identity provider, and email one-time passcode is not enabled as fallback.
+  Remediation: Configure federation for that identity provider, or enable email one-time passcode.
+
+REASONING DISCIPLINE:
+- "Invitation is pending" is a SYMPTOM. The root cause is WHY it is still pending. Always look one level deeper.
+- If you see no redemption AND no sign-in attempts AND no cross-identity sign-ins, that strongly suggests Pattern A (delivery failure), not Pattern B (wrong identity).
+- Always call get_signin_logs WITH display_name when redemption is pending. This is how you distinguish Pattern A from Pattern B.
+- Cross-reference all relevant tools before concluding.
+
+KNOWLEDGE BASE USE — STRICT RULES:
+- You MUST call query_troubleshooting_kb at least once before producing any diagnosis. This is non-negotiable.
+- Your KB query should describe the SPECIFIC root cause you identified, not a generic symptom.
+- After the KB returns results, the Source line in your response MUST cite a filename that ACTUALLY APPEARS in the results.
+- Indexed source files all end in .pdf. Valid examples: 01-troubleshoot-b2b.pdf, 02-google-federation.pdf, 03-one-time-passcode.pdf, 04-guest-user-properties.pdf, 05-add-b2b-users.pdf, 06-signin-log-details.pdf, 07-audit-logs.pdf.
+- NEVER invent or paraphrase a filename. If a name does not end in .pdf and was not in the results, it is wrong.
+- If for some reason no KB result was relevant, write "Source: No directly relevant Microsoft documentation found in knowledge base" instead of inventing one.
+
+RESPONSE FORMAT (use exactly this structure, end at Source line — no closing text):
+
+**Diagnosis:** [Root cause in one sentence — the WHY, not just the WHAT.]
+
+**Evidence:**
+- [Bullets showing how each tool result contributed to your conclusion]
+
+**Recommended Remediation:**
+[Numbered steps the IT admin can take]
+
+**Source:** [Exact .pdf filename from your query_troubleshooting_kb results]
+
+IMPORTANT:
+- If get_guest_user_status returns "found: false", say so clearly. Do not invent scenarios for non-existent users.
+- Distinguish SYMPTOM from ROOT CAUSE in your diagnosis.
+- Do NOT add closing phrases like "Let me know if you need more help" — end your response at the Source line.
+- Be concise.
+"""
+
+
+TOOL_REGISTRY = {
+    "get_guest_user_status": get_guest_user_status,
+    "get_invitation_audit_log": get_invitation_audit_log,
+    "get_signin_logs": get_signin_logs,
+    "query_troubleshooting_kb": query_troubleshooting_kb,
+}
+
+
+def execute_tool_call(tool_name: str, arguments: dict) -> str:
+    """Run a tool by name with the given arguments. Returns a JSON string result."""
+    if tool_name not in TOOL_REGISTRY:
+        return json.dumps({"error": f"Unknown tool: {tool_name}"})
+
+    func = TOOL_REGISTRY[tool_name]
+    try:
+        result = func(**arguments)
+        return json.dumps(result)
+    except TypeError as e:
+        return json.dumps({"error": f"Invalid arguments for {tool_name}: {e}"})
+    except Exception as e:
+        return json.dumps({"error": f"Tool {tool_name} failed: {e}"})
+
+
+def main():
+    print("=" * 70)
+    print("GuestGuard — B2B Guest User Provisioning Diagnostic Agent")
+    print("=" * 70)
+    print(f"\nConnecting to Foundry project: {PROJECT_ENDPOINT}")
+    print(f"Using model deployment: {MODEL_DEPLOYMENT_NAME}\n")
+
+    credential = DefaultAzureCredential(
+        exclude_environment_credential=True,
+        exclude_managed_identity_credential=True,
+    )
+
+    project_client = AIProjectClient(
+        credential=credential,
+        endpoint=PROJECT_ENDPOINT,
+    )
+
+    openai_client = project_client.get_openai_client()
+
+    custom_tools = [
+        {
+            "type": "function",
+            "name": "get_guest_user_status",
+            "description": "Retrieve the directory presence and invitation redemption state of a B2B guest user. Use this FIRST when diagnosing any guest user issue.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "description": "Email address of the guest user",
+                    }
+                },
+                "required": ["email"],
+            },
+        },
+        {
+            "type": "function",
+            "name": "get_invitation_audit_log",
+            "description": "Retrieve audit events for a B2B guest user (invitations, redemptions, group adds, MFA attempts) in chronological order.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "description": "Email address of the guest user",
+                    }
+                },
+                "required": ["email"],
+            },
+        },
+        {
+            "type": "function",
+            "name": "get_signin_logs",
+            "description": "Retrieve sign-in attempts for a guest user. Pass both email AND display_name when you suspect a wrong-identity scenario.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "description": "Email address the user was invited with",
+                    },
+                    "display_name": {
+                        "type": "string",
+                        "description": "Optional. User's display name. When provided, returns sign-ins from OTHER emails matching this name.",
+                    },
+                },
+                "required": ["email"],
+            },
+        },
+        {
+            "type": "function",
+            "name": "query_troubleshooting_kb",
+            "description": "Search authoritative Microsoft documentation for guidance on a B2B troubleshooting symptom. Use AFTER gathering evidence to ground remediation in cited sources.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "symptom": {
+                        "type": "string",
+                        "description": "Natural-language description of the problem",
+                    },
+                    "top_results": {
+                        "type": "integer",
+                        "description": "Number of passages to return (default 3, max 5)",
+                    },
+                },
+                "required": ["symptom"],
+            },
+        },
+    ]
+
+    conversation = openai_client.conversations.create(items=[])
+    print(f"Started conversation: {conversation.id}\n")
+
+    print("Type a question about a guest user, or 'quit' to exit.")
+    print("Example: 'Why can't jane.doe@partner.co access SharePoint?'\n")
+
+    while True:
+        try:
+            user_input = input("You: ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\nGoodbye.")
+            break
+
+        if not user_input:
+            continue
+        if user_input.lower() in ("quit", "exit"):
+            print("Goodbye.")
+            break
+
+        # Add user message to conversation
+        openai_client.conversations.items.create(
+            conversation_id=conversation.id,
+            items=[{"type": "message", "role": "user", "content": user_input}],
+        )
+
+        # Agent reasoning loop
+        max_iterations = 10
+        for iteration in range(max_iterations):
+            response = openai_client.responses.create(
+                model=MODEL_DEPLOYMENT_NAME,
+                instructions=SYSTEM_PROMPT,
+                conversation=conversation.id,
+                input="",
+                tools=custom_tools,
+            )
+
+            tool_calls = []
+            if hasattr(response, "output") and response.output:
+                for item in response.output:
+                    if hasattr(item, "type") and item.type == "function_call":
+                        tool_calls.append(item)
+
+            if not tool_calls:
+                if response.output_text:
+                    print(f"\nGuestGuard:\n{response.output_text}\n")
+                break
+
+            # Execute each tool call and feed results back to conversation
+            for call in tool_calls:
+                tool_name = call.name
+                try:
+                    args = json.loads(call.arguments) if isinstance(call.arguments, str) else call.arguments
+                except json.JSONDecodeError:
+                    args = {}
+
+                print(f"  [calling {tool_name}({args})]")
+                result = execute_tool_call(tool_name, args)
+
+                openai_client.conversations.items.create(
+                    conversation_id=conversation.id,
+                    items=[{
+                        "type": "function_call_output",
+                        "call_id": call.call_id,
+                        "output": result,
+                    }],
+                )
+        else:
+            print("\n[Warning: reached max reasoning iterations]\n")
+
+
+if __name__ == "__main__":
+    main()
