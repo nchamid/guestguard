@@ -29,6 +29,26 @@ This diagnostic work falls on IT every time. Business users get no visibility. T
 
 GuestGuard is a reasoning agent built on **Microsoft Foundry** that takes a guest user's email and returns a diagnosis: what went wrong, why, and how to fix it. It does this by correlating evidence across multiple sources and grounding every remediation recommendation in cited Microsoft Learn documentation via **Foundry IQ**.
 
+## Demo
+
+### Multi-step diagnosis with transparent tool-call traces
+
+GuestGuard investigating a wrong-identity sign-in failure — three tools called in sequence, root cause identified, remediation grounded in a cited Microsoft Learn document.
+
+![Multi-step diagnosis with cited source](docs/screenshots/01-full-ui-diagnosis.png)
+
+### Multi-turn reasoning with conversation memory
+
+The agent retains diagnosis context across turns — a follow-up question gets adapted advice without re-running the tools.
+
+![Multi-turn follow-up](docs/screenshots/03-multi-turn-followup.png)
+
+### Grounded answers to general B2B questions
+
+GuestGuard isn't limited to the pre-wired scenarios — it answers general B2B identity questions using the Foundry IQ knowledge base.
+
+![General B2B questions](docs/screenshots/02-general-b2b-question.png)
+
 ### Example interaction
 
 ```
